@@ -1,39 +1,37 @@
-# Privacy
+# 隱私說明
 
-## What is logged
+## 我們記錄什麼
 
-When you use `tw-legal-llm`, our backend logs:
+當你使用 `tw-legal-llm` 時,後端會記錄以下資料:
 
-- API key id (not the key itself).
-- Tool name (`search_judgments` / `get_judgment_fulltext`).
-- A **SHA-256 hash** of your query (never the raw query).
-- The `doc_id` of fulltext requests.
-- Response status, latency, and result count.
-- Timestamp.
+- API key 的 id(不是 key 本身)。
+- 呼叫的工具名稱(`search_judgments` / `get_judgment_fulltext`)。
+- 你查詢字串的 **SHA-256 雜湊值**(不會記錄查詢原文)。
+- 全文讀取請求的 `doc_id`。
+- 回應狀態、延遲與結果數量。
+- 時間戳記。
 
-We log this for audit, abuse detection, and ISO 42001-aligned access control.
+這些資料用於存取稽核、濫用偵測,以及符合 ISO 42001 的存取控管。
 
-## What is NOT logged
+## 我們不記錄什麼
 
-- Raw query text.
-- Your AI client's prompts, conversations, or generated answers.
-- Anything the LLM (Claude / Cursor / etc.) sends back to you.
+- 查詢字串原文。
+- 你 AI 工具裡的 prompt、對話內容、AI 生成的答案。
+- 任何 LLM(Claude / Cursor 等)回給你的內容。
 
-The LLM-side conversation stays between you and your LLM provider. We never
-see it.
+LLM 端的對話只在你和你的 LLM 服務之間,我們完全看不到。
 
-## Citations
+## 引用連結
 
-`citation_url` points to `dr-lawbot.com/fullview/<doc_id>`, which renders the
-public judgment. The same URL is what we publish on our SEO / GEO surfaces
-and what Google / ChatGPT / Perplexity index.
+`citation_url` 指向 `dr-lawbot.com/fullview/<doc_id>`,該頁公開渲染
+判決原文。這也是我們發布到 SEO / GEO 表面上,讓 Google / ChatGPT /
+Perplexity 收錄的同一個 URL。
 
-## Data retention
+## 資料保存
 
-API request logs are retained for operational use. We do not sell, share, or
-re-purpose logs.
+API 請求日誌會保留供營運使用。我們不販售、不分享、不重新用途化日誌。
 
-## Contact
+## 聯絡
 
-Email `aa.0101181514@gmail.com` for privacy questions or to request log
-deletion for your API key.
+隱私問題、或需刪除你 API key 相關日誌,請寄信
+`aa.0101181514@gmail.com`。

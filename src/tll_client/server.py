@@ -159,8 +159,8 @@ def main() -> None:
     """Entrypoint used by `[project.scripts] tw-legal-llm = ...`."""
     if not API_KEY:
         print(
-            "tw-legal-llm: TLL_API_KEY is not set. Add it to your MCP client's env block.\n"
-            "  Email aa.0101181514@gmail.com for an early-access key.",
+            "tw-legal-llm:沒有設定 TLL_API_KEY。請在 MCP 用戶端設定檔的 env 區塊加入。\n"
+            "  申請早期試用 API key:aa.0101181514@gmail.com",
             file=sys.stderr,
         )
     asyncio.run(_amain())

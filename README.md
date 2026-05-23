@@ -1,48 +1,21 @@
 # TW Legal LLM (TLL)
 
-> Bring Taiwan court judgments to your AI client. Free, citation-ready, BYO-LLM.
+> 把臺灣判決搜尋接進你的 AI 工具。免費、附引用、用你自己的 LLM 訂閱。
 
-`tw-legal-llm` is an MCP (Model Context Protocol) client that lets Claude
-Desktop, Cursor, and other MCP-compatible AI clients search and read Taiwan
-court judgments. Your AI client generates the answers; we just provide the
-judgments and citations.
+`tw-legal-llm` 是一個 MCP(Model Context Protocol)用戶端,讓 Claude
+Desktop、Cursor 與其他相容 MCP 的 AI 工具能搜尋並讀取臺灣司法判決。答案
+由你自己的 AI(你的 Claude / Cursor 訂閱)生成,我們只負責提供判決內容
+和引用。
 
-- ✅ **No vendor lock-in** — works with Claude, Cursor, Cline, or any MCP host.
-- ✅ **You bring the LLM** — uses your own Claude Pro / Cursor / etc. subscription.
-- ✅ **Citation-ready** — every result includes a verified court citation
-  and a link to the judgment on dr-lawbot.com.
-- ✅ **Audited access** — ISO 42001-aligned access logs on the server side.
-- ✅ **Apache 2.0** — open client, simple install.
+- ✅ **無平臺綁定** — 支援 Claude、Cursor、Cline 或任何 MCP 用戶端。
+- ✅ **自帶 LLM** — 使用你自己的 Claude Pro / Cursor 等訂閱,我們不收 LLM 費用。
+- ✅ **引用可驗證** — 每筆結果包含完整法院案號與 dr-lawbot.com 判決連結。
+- ✅ **存取稽核** — 後端遵循 ISO 42001 規範記錄存取日誌。
+- ✅ **Apache 2.0** — 用戶端開源,安裝簡單。
 
-## Install (Claude Desktop)
+## 安裝(Claude Desktop)
 
-Paste this into your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "tw-legal-llm": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/aa0101181514/tw-legal-llm",
-        "tw-legal-llm"
-      ],
-      "env": {
-        "TLL_API_KEY": "tll_xxxxxxxxxxxxxxxxxxxxxxxx"
-      }
-    }
-  }
-}
-```
-
-Restart Claude Desktop. Two tools will appear:
-`search_judgments` and `get_judgment_fulltext`.
-
-> Need an API key? Email Aaron at `aa.0101181514@gmail.com` (manual issue
-> during early access — no signup form yet).
-
-## Install (Cursor)
+把下面這段貼進你的 `claude_desktop_config.json`:
 
 ```json
 {
@@ -62,56 +35,78 @@ Restart Claude Desktop. Two tools will appear:
 }
 ```
 
-## What the tools do
+重新啟動 Claude Desktop,Claude 就會看到兩個工具:
+`search_judgments`、`get_judgment_fulltext`。
 
-See [`docs/tools-reference.md`](docs/tools-reference.md) for the public tool
-contract.
+> 還沒有 API key?寄信給 Aaron `aa.0101181514@gmail.com`(早期試用階段
+> 人工發放,還沒做註冊頁面)。
 
-In short:
+## 安裝(Cursor)
 
-- **`search_judgments`** — search Taiwan court judgments by legal issue,
-  keyword, case number, court name, or statute. Returns ranked judgment
-  metadata and short excerpts.
-- **`get_judgment_fulltext`** — retrieve available text for a judgment
-  selected from search results.
+```json
+{
+  "mcpServers": {
+    "tw-legal-llm": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/aa0101181514/tw-legal-llm",
+        "tw-legal-llm"
+      ],
+      "env": {
+        "TLL_API_KEY": "tll_xxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
 
-## How it works
+## 工具能做什麼
 
-This package contains a thin MCP client. The actual retrieval runs on
-`tll.dr-lawbot.com`. We don't open-source the retrieval implementation
-because the value is in the data quality and curation, not the algorithm.
+完整介面請看 [`docs/tools-reference.md`](docs/tools-reference.md)。
 
-What we *do* publish:
+簡單說:
 
-- This MCP client.
-- The tool contract (inputs, outputs, error codes).
-- Usage docs and config examples.
+- **`search_judgments`** — 用法律議題、關鍵字、案號、法院名稱或法條
+  搜尋臺灣判決,回傳排序後的判決資訊與簡短摘錄。
+- **`get_judgment_fulltext`** — 取得指定判決的可用內文,用於需要深入
+  閱讀理由時。
 
-What we *don't* publish:
+## 運作方式
 
-- Backend retrieval code, ranking, prompts, or thresholds.
-- Quota and abuse-detection rules.
-- Internal stack details.
+這個套件是一個輕量級的 MCP 用戶端。實際的檢索流程跑在
+`tll.dr-lawbot.com` 伺服器上。後端不開源,因為價值在於資料品質與整理,
+不在演算法本身。
 
-## Limitations
+**我們公開的**:
 
-- Free tier has daily limits. You'll get an opaque rate-limit error if you
-  hit them.
-- Some judgments may not have full text available.
-- The LLM (Claude, Cursor, etc.) is responsible for the final answer.
-  Citations are guaranteed by us; answer quality depends on your LLM.
+- 這個 MCP 用戶端。
+- 工具介面契約(輸入、輸出、錯誤代碼)。
+- 使用說明與設定範例。
 
-## Privacy
+**我們不公開的**:
 
-Your queries are logged (hashed) on our server for audit and abuse
-detection. We do not log full-text query content. See
-[`docs/privacy.md`](docs/privacy.md).
+- 後端檢索程式、排序方式、prompt 或門檻值。
+- 額度與濫用偵測規則。
+- 內部技術堆疊。
 
-## License
+## 限制說明
 
-Apache 2.0. See [LICENSE](LICENSE).
+- 免費額度每日有上限,超過時會收到不透明的「額度已達上限」訊息。
+- 部分判決可能沒有完整內文可讀取。
+- 最終回答由 LLM(Claude、Cursor 等)生成。我們保證引用正確性,答案
+  品質取決於你用的 LLM。
 
-## Contact
+## 隱私
 
-- GitHub Issues: https://github.com/aa0101181514/tw-legal-llm/issues
-- Email (API key requests, partnerships): `aa.0101181514@gmail.com`
+你的查詢內容會以 SHA-256 雜湊形式記錄在我們的後端供稽核與濫用偵測使用,
+**不會記錄原文**。詳見 [`docs/privacy.md`](docs/privacy.md)。
+
+## 授權
+
+Apache 2.0。請見 [LICENSE](LICENSE)。
+
+## 聯絡方式
+
+- GitHub Issues:https://github.com/aa0101181514/tw-legal-llm/issues
+- Email(API key 申請、合作洽詢):`aa.0101181514@gmail.com`
