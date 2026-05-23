@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "tw-legal-llm": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/aa0101181514/tw-legal-llm",
+        "tw-legal-llm"
+      ],
+      "env": {
+        "TLL_API_KEY": "tll_REPLACE_WITH_YOUR_KEY"
+      }
+    }
+  }
+}
