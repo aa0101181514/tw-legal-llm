@@ -13,6 +13,19 @@ Desktop、Cursor 與其他相容 MCP 的 AI 工具能搜尋並讀取臺灣司法
 - ✅ **存取稽核** — 後端遵循 ISO 42001 規範記錄存取日誌。
 - ✅ **Apache 2.0** — 用戶端開源,安裝簡單。
 
+## 申請存取(Closed Beta)
+
+目前 TLL 處於 Closed Beta 階段,沒有自助註冊頁面。請寄信申請早期試用 API key:
+
+📧 **aa.0101181514@gmail.com**
+
+信件請附:
+- 你的姓名 / 律所或單位
+- 用途簡述(例如:律師日常判決查詢、法律研究、學術)
+- 你會用哪個 AI 工具(Claude Desktop / Cursor / Cline / 其他)
+
+申請通常 1-3 個工作天內回覆並提供 API key。
+
 ## 安裝(Claude Desktop)
 
 把下面這段貼進你的 `claude_desktop_config.json`:
@@ -28,20 +41,24 @@ Desktop、Cursor 與其他相容 MCP 的 AI 工具能搜尋並讀取臺灣司法
         "tw-legal-llm"
       ],
       "env": {
-        "TLL_API_KEY": "tll_xxxxxxxxxxxxxxxxxxxxxxxx"
+        "TLL_API_KEY": "tll_<請貼上你拿到的 API key>"
       }
     }
   }
 }
 ```
 
-重新啟動 Claude Desktop,Claude 就會看到兩個工具:
-`search_judgments`、`get_judgment_fulltext`。
+設定檔位置:
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-> 還沒有 API key?寄信給 Aaron `aa.0101181514@gmail.com`(早期試用階段
-> 人工發放,還沒做註冊頁面)。
+貼完後**完整關閉再重新啟動 Claude Desktop**(不是只關視窗,Mac 要按 `Cmd+Q`)。
+Claude 會看到兩個工具:`search_judgments`、`get_judgment_fulltext`。
 
 ## 安裝(Cursor)
+
+Cursor 設定檔 `~/.cursor/mcp.json`:
 
 ```json
 {
@@ -54,12 +71,20 @@ Desktop、Cursor 與其他相容 MCP 的 AI 工具能搜尋並讀取臺灣司法
         "tw-legal-llm"
       ],
       "env": {
-        "TLL_API_KEY": "tll_xxxxxxxxxxxxxxxxxxxxxxxx"
+        "TLL_API_KEY": "tll_<請貼上你拿到的 API key>"
       }
     }
   }
 }
 ```
+
+## 試用第一句指令
+
+打開 Claude Desktop,問:
+
+> 幫我搜尋離婚剩餘財產分配的相關判決,並引用 3 個案號。
+
+Claude 會自動呼叫 `search_judgments`,回給你判決清單與引用連結。
 
 ## 工具能做什麼
 
@@ -89,6 +114,60 @@ Desktop、Cursor 與其他相容 MCP 的 AI 工具能搜尋並讀取臺灣司法
 - 後端檢索程式、排序方式、prompt 或門檻值。
 - 額度與濫用偵測規則。
 - 內部技術堆疊。
+
+## 常見問題與排錯
+
+### 問題:Claude Desktop 看不到 TLL 工具
+
+依序檢查:
+
+1. **設定檔路徑對嗎?**
+   - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+   - 用 `cat` / 記事本打開確認檔案內容真的有 `tw-legal-llm` 區塊。
+
+2. **JSON 語法錯了嗎?**
+   - 逗號 / 引號 / 大括號漏掉是最常見錯誤。
+   - 用 https://jsonlint.com 貼進去檢查。
+
+3. **完整重啟 Claude Desktop 了嗎?**
+   - Mac: 直接關閉視窗**不夠**,要 `Cmd+Q` 或從選單列「Claude → 結束」。
+   - Windows: 從系統匣右鍵 Claude → Quit。
+
+4. **uvx 裝好了嗎?**
+   - 開 terminal 輸入 `uvx --version`。
+   - 如果沒有: `curl -LsSf https://astral.sh/uv/install.sh | sh`(macOS/Linux)
+     或 `winget install astral-sh.uv`(Windows)。
+
+5. **看 Claude Desktop 內部日誌**
+   - macOS: `~/Library/Logs/Claude/mcp*.log`
+   - 搜尋關鍵字 `tw-legal-llm` 看 stderr 訊息。
+
+### 錯誤:`unauthorized`
+
+- API key 沒貼對。檢查 `env.TLL_API_KEY` 是否完整(包含 `tll_` 前綴)。
+- 你的 key 已被撤銷,寫信給我們(aa.0101181514@gmail.com)申請新的。
+
+### 錯誤:`quota_exceeded`
+
+- 你今天的免費額度已用完,明天 0 點(臺北時間)重置。
+- 需要更高額度,寫信申請。
+
+### 錯誤:`fulltext_not_available`
+
+- 取全文必須先 `search_judgments`,再用搜尋結果裡的 `result_token` 呼叫
+  `get_judgment_fulltext`。
+- Token 短效(15 分鐘),過久就要重新搜尋。
+- 如果 Claude 跳過搜尋直接想取全文,試著明確告訴它「請先搜尋再讀全文」。
+
+### 錯誤:`tw-legal-llm: TLL_API_KEY is not set`
+
+- 設定檔的 `env` 區塊忘了寫 `TLL_API_KEY`,或字串輸錯。
+
+### 其他問題
+
+- GitHub Issues: https://github.com/aa0101181514/tw-legal-llm/issues
+- Email: `aa.0101181514@gmail.com`
 
 ## 限制說明
 
