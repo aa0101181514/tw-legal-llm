@@ -2,7 +2,7 @@
 
 ## 我們記錄什麼
 
-當你使用 `tw-legal-llm` 時,後端會記錄以下資料:
+當你使用 `tw-legal-rag` 時,後端會記錄以下資料:
 
 - API key 的 id(不是 key 本身)。
 - 呼叫的工具名稱(`search_judgments` / `get_judgment_fulltext`)。

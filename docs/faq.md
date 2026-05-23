@@ -3,7 +3,7 @@
 ### 我需要付費的 Claude / Cursor 訂閱嗎?
 
 你需要一份讓你的 AI 工具(Claude Desktop、Cursor 等)能呼叫 MCP 工具
-的訂閱。TLL 本身不呼叫任何 LLM,生成的工作由你的 LLM 做。
+的訂閱。TLR 本身不呼叫任何 LLM,生成的工作由你的 LLM 做。
 
 ### 能用 ChatGPT 嗎?
 
@@ -45,5 +45,5 @@
 
 ### 可以自架嗎?
 
-不可以。TLL 是雲端代管服務。本 repo 內的 MCP 用戶端只是把請求轉發到
-`tll.dr-lawbot.com`。
+不可以。TLR 是雲端代管服務。本 repo 內的 MCP 用戶端只是把請求轉發到
+`tlr.dr-lawbot.com`。

@@ -1,8 +1,8 @@
 """
-TW Legal LLM (TLL) — thin MCP client.
+TW Legal RAG (TLR) — thin MCP client.
 
-This is a stdio MCP server that proxies tool calls to the TLL backend at
-https://tll.dr-lawbot.com. It contains NO retrieval logic, NO ranking, and
+This is a stdio MCP server that proxies tool calls to the TLR backend at
+https://tlr.dr-lawbot.com. It contains NO retrieval logic, NO ranking, and
 makes NO LLM calls. Your AI client (Claude Desktop, Cursor, etc.) is
 responsible for generating answers; this client only fetches judgments.
 
@@ -15,10 +15,10 @@ Usage (via Claude Desktop config):
 
     {
       "mcpServers": {
-        "tw-legal-llm": {
+        "tw-legal-rag": {
           "command": "uvx",
-          "args": ["--from", "git+https://github.com/aa0101181514/tw-legal-llm", "tw-legal-llm"],
-          "env": { "TLL_API_KEY": "tll_xxxxx" }
+          "args": ["--from", "git+https://github.com/aa0101181514/tw-legal-rag", "tw-legal-rag"],
+          "env": { "TLR_API_KEY": "tlr_xxxxx" }
         }
       }
     }
@@ -37,9 +37,9 @@ from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
 
-BACKEND_URL = os.environ.get("TLL_BACKEND_URL", "https://tll.dr-lawbot.com")
-API_KEY = os.environ.get("TLL_API_KEY", "")
-REQUEST_TIMEOUT_SEC = float(os.environ.get("TLL_REQUEST_TIMEOUT", "30"))
+BACKEND_URL = os.environ.get("TLR_BACKEND_URL", "https://tlr.dr-lawbot.com")
+API_KEY = os.environ.get("TLR_API_KEY", "")
+REQUEST_TIMEOUT_SEC = float(os.environ.get("TLR_REQUEST_TIMEOUT", "30"))
 
 
 # ──────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ FULLTEXT_TOOL = Tool(
 # ──────────────────────────────────────────────────────────
 # Server
 # ──────────────────────────────────────────────────────────
-server: Server = Server("tw-legal-llm")
+server: Server = Server("tw-legal-rag")
 
 
 @server.list_tools()
@@ -116,11 +116,11 @@ async def _list_tools() -> list[Tool]:
 async def _call_backend(path: str, payload: dict[str, Any]) -> dict[str, Any]:
     """POST to backend with Bearer auth. Errors come back opaque."""
     if not API_KEY:
-        return {"error": "missing_api_key", "message": "Set TLL_API_KEY environment variable."}
+        return {"error": "missing_api_key", "message": "Set TLR_API_KEY environment variable."}
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
-        "User-Agent": "tw-legal-llm-client/0.1.0",
+        "User-Agent": "tw-legal-rag-client/0.1.0",
     }
     url = f"{BACKEND_URL}{path}"
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SEC) as client:
@@ -156,10 +156,10 @@ async def _amain() -> None:
 
 
 def main() -> None:
-    """Entrypoint used by `[project.scripts] tw-legal-llm = ...`."""
+    """Entrypoint used by `[project.scripts] tw-legal-rag = ...`."""
     if not API_KEY:
         print(
-            "tw-legal-llm:沒有設定 TLL_API_KEY。請在 MCP 用戶端設定檔的 env 區塊加入。\n"
+            "tw-legal-rag:沒有設定 TLR_API_KEY。請在 MCP 用戶端設定檔的 env 區塊加入。\n"
             "  申請早期試用 API key:aa.0101181514@gmail.com",
             file=sys.stderr,
         )

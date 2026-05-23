@@ -1,14 +1,14 @@
 {
   "mcpServers": {
-    "tw-legal-llm": {
+    "tw-legal-rag": {
       "command": "uvx",
       "args": [
         "--from",
-        "git+https://github.com/aa0101181514/tw-legal-llm",
-        "tw-legal-llm"
+        "git+https://github.com/aa0101181514/tw-legal-rag",
+        "tw-legal-rag"
       ],
       "env": {
-        "TLL_API_KEY": "tll_REPLACE_WITH_YOUR_KEY"
+        "TLR_API_KEY": "tlr_REPLACE_WITH_YOUR_KEY"
       }
     }
   }
