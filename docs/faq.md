@@ -1,24 +1,23 @@
 # 常見問題
 
-### 我需要付費的 Claude / Cursor 訂閱嗎?
+### 要付費嗎?需要 API key 嗎?
 
-你需要一份讓你的 AI 工具(Claude Desktop、Cursor 等)能呼叫 MCP 工具
-的訂閱。TLR 本身不呼叫任何 LLM,生成的工作由你的 LLM 做。
+判決檢索服務本身免費、免註冊、不需 API key。你只需要一個能連線到本服務的
+AI 工具(Claude、ChatGPT 等),最終答案由你的 AI 生成,我們不收 AI 使用費。
 
-### 能用 ChatGPT 嗎?
+### 怎麼在 Claude Desktop 用?
 
-目前還不行。ChatGPT Plus 用戶將來可透過 Custom GPT Actions 整合,在
-我們的開發路線上。現階段支援 Claude Desktop、Cursor、Cline 以及其他
-相容 MCP 的用戶端。
+Customize → Connectors → **+** → Add custom connector,URL 填
+`https://tlr.dr-lawbot.com/mcp`,OAuth 欄位留空。詳見 [README](../README.md)。
 
-### 為什麼搜尋結果沒有原始分數?
+### 怎麼在 ChatGPT 用?
 
-分數容易誤導且不易解讀。我們改回傳排名(rank)。
+透過「法律偵探」自訂 GPT(上架審核中)。進階使用者可自建 Custom GPT,
+在 Actions 匯入 `https://tlr.dr-lawbot.com/openapi.yaml`,認證選 None。
 
 ### 我可以不先搜尋就直接用 doc_id 取全文嗎?
 
-不行。`get_judgment_fulltext` 必須帶上來自最近一次 `search_judgments`
-回應的 `result_token`,這是為了防止大量抓取。
+不行。讀取判決內文必須帶上來自最近一次搜尋回應的 `result_token`。
 
 ### 可以搜尋幾年以前的判決?
 
@@ -26,24 +25,23 @@
 
 ### 資料是完整的嗎?
 
-我們收錄公開可取得的臺灣司法判決。涵蓋範圍與更新時間不保證完整,已知
-限制請參閱 [dr-lawbot.com](https://dr-lawbot.com)。
+我們收錄公開可取得的臺灣司法判決。涵蓋範圍與更新時間不保證完整,已知限制
+請參閱 [dr-lawbot.com](https://dr-lawbot.com)。
 
 ### AI 給我的答案在法律上正確嗎?
 
-不一定。答案由你的 LLM 用戶端生成,不是由我們生成。我們保證引用正確,
-但法律解讀仰賴你的 LLM(以及你自己)。重要引用請務必上 `dr-lawbot.com`
-判決頁核對原文。
+不一定。答案由你的 AI 生成,不是由我們生成。我們保證引用正確,但法律解讀
+仰賴你的 AI(以及你自己)。重要引用請務必上 `dr-lawbot.com` 判決頁核對原文。
 
-### 我收到 `quota_exceeded`,可以提高額度嗎?
+### 服務會不會突然不能用?
 
-可以,寄信給 `aa.0101181514@gmail.com`。
+本服務為免費公開服務,可能因維護或流量保護而暫時限流,稍後重試即可。
 
 ### 後端原始碼可以看嗎?
 
-不可以。後端檢索流程閉源。本 repo 是用戶端開源,後端不開源。
+不可以。後端檢索流程閉源,價值在判決資料的品質與整理。本 repo 只公開
+使用說明、介面契約與 OpenAPI schema。
 
 ### 可以自架嗎?
 
-不可以。TLR 是雲端代管服務。本 repo 內的 MCP 用戶端只是把請求轉發到
-`tlr.dr-lawbot.com`。
+不可以。TLR 是雲端代管服務,連線到 `tlr.dr-lawbot.com`。
