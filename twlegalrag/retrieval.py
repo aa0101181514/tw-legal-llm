@@ -205,7 +205,7 @@ class TLRClient:
         """Search then fetch full text for the top ``read_top`` hits (default all).
 
         This is the one-call retrieval the CLI uses: locate via search, then read
-        reasoning text so both the LLM and the verifier have real holding text.
+        reasoning text so the bundle and the citation check have real holding text.
         """
         hits = self.search(query, search_type=search_type, max_results=max_results)
         n = len(hits) if read_top is None else min(read_top, len(hits))

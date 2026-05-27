@@ -1,13 +1,16 @@
-"""Taiwan Legal RAG — retrieve → answer with your own LLM → verify citations.
+"""Taiwan Legal RAG — retrieve Taiwan court judgments for use with your own AI.
 
-Three stages, deliberately decoupled:
+Two stages, deliberately decoupled:
 
-1. ``retrieval``  — query the TLR API (your judgments stay on the server; only
-   the matched judgments come back). No LLM here.
-2. ``llm``        — feed the retrieved judgments to *your own* LLM account
-   (OpenAI / Anthropic / any OpenAI-compatible endpoint). Zero server-side LLM.
-3. ``faithful``   — verify every citation in the answer against the retrieved
-   full text (wrong case / fabricated quote / party-as-court). Pure functions.
+1. ``retrieval`` — query the TLR API (the judgment database stays on the server;
+   only the matched judgments come back). No LLM here.
+2. ``verify``    — a bundle-level citation check: does an answer cite a case that
+   is actually in the retrieved bundle, and do its verbatim quotes appear
+   somewhere in the bundle's text. Deterministic pure functions, no LLM. This is
+   not a semantic faithfulness verifier — see ``verify`` for what it does NOT do.
+
+``bundle`` packages retrieved judgments (with stable citation ids and explicit
+verification instructions) for use with your own AI tool.
 """
 
 __version__ = "0.1.0"

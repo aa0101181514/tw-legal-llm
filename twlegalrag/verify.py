@@ -12,9 +12,10 @@ retrieved bundle:
 2. **Wrong-doc identity.** For cited cases that *are* in the bundle, confirm the
    court/year/case-type/number key matches the retrieved judgment.
 
-3. **Fake quote (narrow).** Check whether the answer's verbatim "the court
-   said ..." quotes appear in the retrieved judgments' reasoning text. This is a
-   pattern-based string match, not a semantic check.
+3. **Bundle quote-presence (narrow).** Check whether the answer's verbatim "the
+   court said ..." quotes appear ANYWHERE in the bundle's text. This is a
+   pattern-based string match across the whole bundle — it does NOT prove a
+   quote came from the specific judgment the answer attributes it to.
 
 What it CANNOT check: whether the court's reasoning was read correctly, whether
 a party's argument was passed off as the court's holding, whether incidental
@@ -52,7 +53,10 @@ class VerifyReport:
     in_bundle: int
     out_of_bundle: int
     verdicts: list[CitationVerdict] = field(default_factory=list)
-    fake_quote: dict = field(default_factory=dict)   # answer-level fake-quote check
+    # Bundle-level quote-presence check: does a verbatim quote appear ANYWHERE in
+    # the bundle's text. It does NOT prove the quote is from the specific judgment
+    # the answer attributes it to (that needs per-citation evidence spans).
+    quote_presence: dict = field(default_factory=dict)
     overall: str = "pass"                            # worst status across all checks
 
 
@@ -112,12 +116,16 @@ def citation_check(answer_text: str, judgments: list[Judgment]) -> VerifyReport:
             )
         )
 
-    # Answer-level fake-quote check: verify verbatim court quotes against the
-    # concatenated reasoning text of all retrieved judgments that have full text.
+    # Bundle-level quote-presence check: do the answer's verbatim "the court
+    # said ..." quotes appear ANYWHERE in the bundle's text? We concatenate all
+    # retrieved judgments' text, so this can only tell you the quote exists
+    # somewhere in the bundle — NOT that it came from the judgment the answer
+    # attributes it to. A `pass` here is weak evidence; a `fail` means the quote
+    # is absent from the entire bundle (a stronger signal of fabrication).
     combined_fulltext = "\n\n".join(j.fulltext for j in judgments if j.fulltext)
-    fq = V.check_fake_quote(answer_text, combined_fulltext, None)
+    qp = V.check_fake_quote(answer_text, combined_fulltext, None)
 
-    statuses = [v.status for v in verdicts] + [fq["status"]]
+    statuses = [v.status for v in verdicts] + [qp["status"]]
     if "fail" in statuses:
         overall = "fail"
     elif "needs_review" in statuses:
@@ -130,7 +138,12 @@ def citation_check(answer_text: str, judgments: list[Judgment]) -> VerifyReport:
         in_bundle=in_bundle,
         out_of_bundle=out_of_bundle,
         verdicts=verdicts,
-        fake_quote={"status": fq["status"], "reason": fq["reason"], "detail": fq.get("detail", {})},
+        quote_presence={
+            "check": "bundle_quote_presence_check",
+            "status": qp["status"],
+            "reason": qp["reason"],
+            "detail": qp.get("detail", {}),
+        },
         overall=overall,
     )
 

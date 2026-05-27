@@ -1,8 +1,8 @@
 """Config loading: env vars first, then ~/.twlegalrag/config.toml.
 
-The config file holds the user's OWN LLM API key. It lives in the user's home
-dir, never in the repo, and is git-ignored. Env vars override the file so CI /
-one-off runs can avoid writing keys to disk.
+Holds only the TLR endpoint settings (base URL and an optional API key). The
+config file lives in the user's home dir, never in the repo, and is git-ignored.
+Env vars override the file.
 """
 
 from __future__ import annotations
@@ -14,8 +14,6 @@ try:
     import tomllib  # Python 3.11+
 except ModuleNotFoundError:  # pragma: no cover
     tomllib = None
-
-from .llm import LLMConfig
 
 CONFIG_DIR = Path(os.environ.get("TWLEGALRAG_HOME", Path.home() / ".twlegalrag"))
 CONFIG_FILE = CONFIG_DIR / "config.toml"
@@ -29,22 +27,6 @@ def _load_file() -> dict:
             return tomllib.load(f)
     except Exception:
         return {}
-
-
-def load_llm_config() -> LLMConfig:
-    """LLMConfig from env (preferred) merged over the config file."""
-    cfg = LLMConfig.from_env()
-    data = _load_file().get("llm", {})
-    # Env wins; only fill gaps from file.
-    if not cfg.api_key and data.get("api_key"):
-        cfg.api_key = data["api_key"]
-    if not os.environ.get("TWLEGALRAG_LLM_PROVIDER") and data.get("provider"):
-        cfg.provider = data["provider"]
-    if not os.environ.get("TWLEGALRAG_LLM_MODEL") and data.get("model"):
-        cfg.model = data["model"]
-    if not os.environ.get("TWLEGALRAG_LLM_BASE_URL") and data.get("base_url"):
-        cfg.base_url = data["base_url"]
-    return cfg
 
 
 def get_tlr_base_url() -> str:
