@@ -1,138 +1,185 @@
-# TW Legal RAG (TLR)
+# Taiwan Legal RAG (`twlegalrag`)
 
-> 把臺灣判決搜尋接進你的 AI 工具。免費、附引用、用你自己的 AI。
+> Open-source CLI for **semantic** Taiwan legal judgment retrieval, powered by
+> Legal Detective's 22M-judgment retrieval infrastructure.
 
-TLR 是「法律偵探」(dr-lawbot.com)提供的判決檢索服務,讓 Claude、ChatGPT
-與其他相容工具能搜尋並引用臺灣司法判決。答案由你自己的 AI 生成,我們只負責
-提供判決內容與可驗證的引用連結。
+Taiwan Legal RAG CLI retrieves Taiwan court judgments from Legal Detective's
+public TLR endpoint and packages them for use with your own AI tools. It does
+**not** generate legal advice by default and does **not** guarantee semantic
+faithfulness of third-party model outputs. Its built-in citation check only
+verifies whether cited judgments belong to the retrieved bundle.
 
-- ✅ **免費、免註冊** — 不需申請、不需 API key,貼一個網址就能用。
-- ✅ **自帶 AI** — 用你自己的 Claude / ChatGPT,我們不收 AI 使用費。
-- ✅ **引用可驗證** — 每筆結果都附完整法院案號與 dr-lawbot.com 判決連結。
-- ✅ **存取稽核** — 後端遵循 ISO 42001 規範記錄存取日誌。
+繁中：Taiwan Legal RAG CLI 是一個開源命令列工具,連接法律偵探建置的 2,200 萬筆
+台灣裁判語義檢索服務,讓你能用自然語言搜尋判決,並將檢索結果帶入自己的 AI 工具使用。
 
-服務網址(Remote MCP / API):
+## 為什麼不一樣
+
+這不是一般關鍵字判決搜尋工具。背後連到的是法律偵探長期建置的 TLR 檢索服務：
+
+- 約 **2,200 萬筆**台灣裁判資料,經過結構化處理與向量化。
+- 經過上千小時的 retrieval pipeline optimization。
+- 支援**語義模糊搜尋**——不是只靠案號、法院、關鍵字,能用自然語言查找
+  「概念相近但用詞不同」的判決。
+- 開源 CLI 本身**不內建判決庫**,也不暴露後端模型權重或向量索引;它是連接公開
+  TLR retrieval endpoint 的工具。
+- 對開發者來說,它提供一個可直接接入自己 AI workflow 的台灣法律 RAG retrieval layer。
+
+> Unlike keyword-only legal search tools, Taiwan Legal RAG CLI connects to a
+> production semantic retrieval backend built on 22M+ Taiwan court judgments,
+> enabling fuzzy concept-level search while keeping model weights, infrastructure,
+> and private indexes server-side.
+
+（措辭說明：開源的是 **CLI**,不是模型或向量庫;後端的檢索服務、模型權重、私有
+索引都留在伺服器端,不隨本工具公開。）
+
+## 它做什麼 / 不做什麼
+
+**做**：用自然語言檢索判決 → 取得結構化清單、全文片段、引用連結 → 打包成 bundle
+交給你自己的 AI,或對 AI 產生的答案做 bundle 層級的引用檢查。
+
+**不做**：本工具預設**不生成**法律意見。即使用 `ask`(選用)生草稿,那是由**你
+自己的 LLM 帳號**生成,**不由法律偵探背書或驗證**。
+
+### 內建的 citation check 能檢查什麼
+
+`check` 與 `ask` 結尾的引用檢查是 **bundle 層級、盡力而為**的字串檢查,只驗：
+
+- 答案引用的判決字號**是否在 bundle 內**(抓「引用了沒檢索到的字號」= 疑似捏造);
+- 是否引用 bundle 外、或不存在的判決;
+- **窄義**逐字引文(答案宣稱「法院說……」的逐字句是否出現在判決全文)。
+
+### 它**不能**檢查什麼（重要）
+
+- 法院見解是否**讀對**;
+- 是否把**當事人主張**(原告/被告/上訴人)當成**法院見解**;
+- 是否把**附帶論述**當成判決**核心權威**;
+- paraphrase(改寫)型的見解幻覺。
+
+這些都需要閱讀判決全文才能判斷——這也是為什麼 bundle 內附上判決全文與
+verification instructions,要求下游模型自行核對。**`pass` 只代表「引用的字號身份
+對得上」,不代表「法律推論正確」。**
+
+## 安裝
+
+```bash
+pip install twlegalrag            # 核心 (retrieval + bundle + citation check)
+pip install 'twlegalrag[openai]'  # + OpenAI provider (ask 用)
+pip install 'twlegalrag[anthropic]'
+pip install 'twlegalrag[all]'
+```
+
+## 使用
+
+```bash
+# 1) 純檢索 — 列出符合的判決 (無 LLM,無成本)
+twlegalrag search "勞資 加班費" -n 5 --read
+
+# 2) 打包 — 產生可交給任何 AI 的 bundle (無 LLM,無成本) ★推薦主流程
+twlegalrag pack "車禍對方全責,我可以求償什麼?" -o bundle.json
+#   → 把 bundle.json 貼給 ChatGPT / Claude / Gemini,要求它只引用 bundle 內的判決
+
+# 3) 引用檢查 — 對任何 AI 產生的答案做 bundle 層級檢查
+twlegalrag check bundle.json answer.txt
+
+# 服務是否正常
+twlegalrag health
+
+# (選用) BYO-LLM 草稿 — 用你自己的 LLM 生草稿,未經驗證/背書
+twlegalrag ask "車禍對方全責,我可以求償什麼?"
+```
+
+`pack` 產生的 bundle 包含 `query`、每筆判決的 `citation_id`(J1, J2, ...)、
+`citation_text`、`citation_url`、`doc_id`、Layer-1 listing、`fulltext_excerpt`、
+`allowed_citations`,以及一段 `verification_instructions`,明確要求下游模型只引用
+bundle 內判決、把不支持的命題標為 unverified。stdout/stderr 也會印一段 AI USE NOTICE。
+
+## 設定你自己的 LLM（僅 `ask` 需要）
+
+本工具**不內附任何金鑰**。`ask` 用你自己的帳號,你自己付 token：
+
+```bash
+export TWLEGALRAG_LLM_PROVIDER=openai          # openai | anthropic | openai-compat
+export TWLEGALRAG_LLM_API_KEY=sk-...
+export TWLEGALRAG_LLM_MODEL=gpt-4o             # 選用,各 provider 有合理預設
+```
+
+OpenAI 相容端點(如智譜 GLM、本地 vLLM/Ollama gateway)**必須**設 `base_url`,
+否則直接報錯(不會靜默打到官方 OpenAI 花錯錢)：
+
+```bash
+export TWLEGALRAG_LLM_PROVIDER=openai-compat
+export TWLEGALRAG_LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+export TWLEGALRAG_LLM_API_KEY=...
+export TWLEGALRAG_LLM_MODEL=glm-4
+```
+
+或放在 `~/.twlegalrag/config.toml`(已 git-ignore,**切勿** commit)：
+
+```toml
+[llm]
+provider = "openai"
+model = "gpt-4o"
+api_key = "sk-..."
+```
+
+## 隱私與資料流向
+
+請務必理解這些網路傳輸：
+
+- 你的**搜尋字詞 / 問題**會送到 TLR 檢索端點(`https://tlr.dr-lawbot.com`)以取得判決。
+- 若使用 `ask`(或自行把 bundle 餵給 LLM),你的**問題與判決內容**會送到**你設定的
+  LLM provider**(OpenAI / Anthropic / 你的相容端點)。
+- 法律偵探**不使用 server-side LLM token**——`ask` 的生成完全在你自己的帳號發生。
+- **API 金鑰請放環境變數**,不要 commit 設定檔(`config.toml`、`.env` 已被 git-ignore)。
+- OpenAI 相容 provider **未設 `base_url` 會直接報錯**,避免誤打官方端點。
+- 由外部 LLM 生成的法律分析,**不由法律偵探背書**。
+
+## citation check 如何運作
+
+`twlegalrag/faithful/` 是一組**零依賴純函式**(只用標準庫 `re` + `unicodedata`)。
+給定答案文字與檢索到的判決全文,逐筆回 `pass` / `needs_review` / `fail`。設計上
+保守:不確定時回 `needs_review` 而非 `fail`,以壓低誤報。它**不呼叫 LLM、不碰
+資料庫**,是確定性的字串分析。詳見 `twlegalrag/faithful/VENDORED.md`。
+
+## 架構
 
 ```
-https://tlr.dr-lawbot.com
+你的問題
+   │
+[檢索]  TLR /v1/search   ──►  Layer-1 listings + result_token
+   │    TLR /v1/fulltext ──►  每篇判決理由全文
+   │
+[打包]  pack ──► bundle.json (citation_id / allowed_citations / verification rules)
+   │            └─► 交給你自己的 AI 工具
+   │
+[檢查]  check ──► bundle 層級引用檢查 (在/不在 bundle + 窄義逐字引文)
 ```
 
----
+判決庫、embedding、檢索邏輯都在伺服器端,**不在本 repo**。本 CLI 是開源客戶端
+與引用檢查工具。
 
-## 安裝(Claude Desktop)
+## 其他接法（同一個 TLR 後端）
 
-1. 打開 Claude Desktop → 左上選單 **Customize** → **Connectors**。
-2. 點右上角 **+** → **Add custom connector**。
-3. 填入:
-   - **Name**:`法律偵探`(或任何你喜歡的名稱)
-   - **Remote MCP server URL**:`https://tlr.dr-lawbot.com/mcp`
-4. 按 **Add**。完成,不需要填 OAuth、不需要 API key。
+這個 Python CLI 是接 TLR 檢索服務的方式之一。同一個後端 `tlr.dr-lawbot.com`
+也支援把判決搜尋直接接進你的 AI 工具,不必裝 CLI：
 
-之後在對話框問:
+**Claude Desktop（Remote MCP）**
+1. Claude Desktop → **Customize** → **Connectors** → **Add custom connector**。
+2. Remote MCP server URL 填 `https://tlr.dr-lawbot.com/mcp`(免 OAuth、免 API key)。
+3. 直接在對話問「幫我搜尋離婚剩餘財產分配的判決並引用 3 個案號」。
 
-> 幫我搜尋離婚剩餘財產分配的相關判決,並引用 3 個案號。
+**ChatGPT（Custom GPT Action）**
+- 在 Custom GPT 的 Actions 匯入 OpenAPI schema:`https://tlr.dr-lawbot.com/openapi.yaml`
+- Action 認證選 **None**(本服務免認證)。
 
-Claude 會自動呼叫判決搜尋,回給你判決清單與引用連結。
+不論走 CLI、MCP 還是 ChatGPT Action,答案都由**你自己的 AI**生成,本服務只提供
+判決內容與可驗證的引用連結。
 
----
+## 免責
 
-## 安裝(ChatGPT)
+本工具是分析輔助,不是法律意見,也不是律師。務必自行閱讀引用的判決全文。
+透過 API 取得的判決為台灣公開裁判資料,你需為自己的使用負責。
 
-ChatGPT 端透過「法律偵探」自訂 GPT 使用,搜尋即可:
+## License
 
-> 在 ChatGPT 的「探索 GPT」搜尋「法律偵探」
-
-(GPT 上架審核中;上架後此處補連結。)
-
-進階使用者也可自行建立 Custom GPT,在 Actions 匯入下方 OpenAPI schema:
-
-```
-https://tlr.dr-lawbot.com/openapi.yaml
-```
-
-Action 認證選 **None**(本服務免認證)。公開 GPT 需設定 Privacy Policy
-URL,可直接填:`https://dr-lawbot.com/tlr-privacy`。
-
----
-
-## 能做什麼
-
-- **搜尋判決** — 用法律議題、關鍵字、案號、法院名稱或法條搜尋臺灣判決,
-  回傳判決資訊與簡短摘錄。
-- **讀取判決內文** — 取得指定判決的可用內文,用於需要深入閱讀理由時。
-
-完整介面契約請看 [`docs/tools-reference.md`](docs/tools-reference.md)。
-
----
-
-## 試用第一句指令
-
-> 幫我找近年酒駕公共危險罪的量刑判決,列出 3 個案號和判決連結。
-
----
-
-## 運作方式
-
-實際的檢索流程跑在 `tlr.dr-lawbot.com` 伺服器上。後端不開源,因為價值在於
-判決資料的品質與整理,不在演算法本身。
-
-**我們公開的**:
-
-- 工具介面契約(輸入、輸出、錯誤代碼)。
-- OpenAPI schema(供 ChatGPT Action 使用)。
-- 使用說明與設定範例。
-
-**我們不公開的**:
-
-- 後端檢索程式、排序方式與內部技術堆疊。
-
----
-
-## 常見問題與排錯
-
-### Claude Desktop 看不到工具
-
-- 確認 URL 填的是 `https://tlr.dr-lawbot.com/mcp`(結尾有 `/mcp`)。
-- 確認 OAuth 欄位**留空**(本服務免認證)。
-- 完整重啟 Claude Desktop:Mac 按 `Cmd+Q`,Windows 從系統匣 Quit。
-
-### 搜尋沒有結果
-
-- 換個說法或關鍵字再試。
-- 我們的判決庫持續擴充,部分冷門領域資料可能尚未涵蓋。
-
-### 服務暫時無法使用
-
-- 後端可能正在維護或限流,稍後重試。
-
-### 其他問題
-
-- GitHub Issues:https://github.com/aa0101181514/tw-legal-rag/issues
-- Email:`aa.0101181514@gmail.com`
-
----
-
-## 限制說明
-
-- 部分判決可能沒有完整內文可讀取。
-- 最終回答由你的 AI(Claude、ChatGPT 等)生成;我們保證引用正確性,
-  答案品質取決於你用的 AI。
-- 本服務為免費公開服務,可能因維護或流量保護而暫時限流。
-
----
-
-## 隱私
-
-為持續改善判決檢索品質,本服務會記錄查詢內容,**不含可識別個人身分的資訊,
-且不會用於訓練生成式 AI 模型**。詳見 [`docs/privacy.md`](docs/privacy.md)。
-
----
-
-## 授權
-
-文件與介面契約以 Apache 2.0 釋出。請見 [LICENSE](LICENSE)。
-
-## 聯絡方式
-
-- GitHub Issues:https://github.com/aa0101181514/tw-legal-rag/issues
-- Email(合作洽詢):`aa.0101181514@gmail.com`
+MIT.

@@ -1,12 +1,20 @@
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
+.eggs/
+build/
+dist/
 .venv/
 venv/
-dist/
-build/
+
+# Config holding the user's own LLM API keys — NEVER commit
+.twlegalrag/
+config.toml
+*.local.toml
 .env
-.env.*
+
+# OS / editor
 .DS_Store
 .idea/
 .vscode/
