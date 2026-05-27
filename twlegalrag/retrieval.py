@@ -6,9 +6,10 @@ Talks to the public Taiwan Legal RAG API (default ``https://tlr.dr-lawbot.com``)
                        Returns a structured Layer-1 *listing* per hit
                        (court / verdict / cited articles / type) plus a
                        short-lived ``result_token``. NOT reasoning text.
-  POST /v1/fulltext  — given a doc_id + result_token, returns the judgment's
-                       reasoning full text. THIS is what citation verification
-                       needs — the listing alone has no holding text.
+  POST /v1/fulltext  — given a doc_id + result_token, returns an excerpt of the
+                       judgment's reasoning text (capped server-side). This is
+                       what the citation check needs — the listing alone has no
+                       holding text.
 
 Design notes baked in from production experience:
 
@@ -17,7 +18,7 @@ Design notes baked in from production experience:
   them — this is the same failure that breaks OpenAI's Action layer. We parse
   leniently so the CLI is robust where stricter clients are not.
 * **result_token reuse.** One search returns a single token that encodes the
-  whole result set; pass it back unchanged when fetching any hit's full text.
+  whole result set; pass it back unchanged when fetching any hit's text excerpt.
 * **Public, authless by default.** A Bearer key is optional — supply one only
   if the server operator issued you one (it just lets them attribute your
   traffic in their logs). Per-IP rate limiting applies regardless.
@@ -175,10 +176,10 @@ class TLRClient:
         return out
 
     def fetch_fulltext(self, judgment: Judgment) -> Judgment:
-        """Fetch reasoning full text for a hit and populate it in place.
+        """Fetch the reasoning text excerpt for a hit and populate it in place.
 
-        Required before citation verification: the search listing has no holding
-        text, so faithfulness checks have nothing to compare against without this.
+        Required before the citation check: the search listing has no holding
+        text, so the bundle-level checks have nothing to compare against.
         """
         if not judgment.result_token:
             raise RetrievalError(
@@ -213,7 +214,7 @@ class TLRClient:
             try:
                 self.fetch_fulltext(j)
             except RetrievalError:
-                # Leave fulltext empty; downstream verifier degrades to
+                # Leave fulltext empty; the citation check degrades to
                 # needs_review rather than failing on missing text.
                 pass
         return hits

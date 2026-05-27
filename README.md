@@ -130,7 +130,12 @@ export TWLEGALRAG_TLR_API_KEY=...                          # 選用
 `twlegalrag/faithful/` 是一組**零依賴純函式**(只用標準庫 `re` + `unicodedata`)。
 給定答案文字與 bundle 內判決片段,回 `pass` / `needs_review` / `fail`。設計上保守:
 不確定時回 `needs_review` 而非 `fail`,以壓低誤報。它**不呼叫 LLM、不碰資料庫**,是
-確定性的字串分析。詳見 `twlegalrag/faithful/VENDORED.md`。
+確定性的字串分析。
+
+⚠️ 這個目錄是內部程式的**快照**,裡面有些函式(如 `check_party_as_court` /
+`run_all_checks`)CLI **並沒有用到**。它們存在**不代表** CLI 能做見解層 / 語義驗證——
+CLI 只用其中兩個 bundle 層級檢查。請勿把檔案清單當功能清單。詳見
+`twlegalrag/faithful/VENDORED.md`。
 
 ## 其他接法（同一個 TLR 後端）
 
