@@ -23,7 +23,7 @@ from rich.table import Table
 from . import __version__
 from .bundle import AI_USE_NOTICE, build_bundle
 from .config import get_tlr_api_key, get_tlr_base_url
-from .retrieval import RetrievalError, TLRClient
+from .retrieval import Judgment, RetrievalError, TLRClient
 from .verify import VerifyReport, citation_check
 
 app = typer.Typer(
@@ -63,7 +63,7 @@ def health() -> None:
 @app.command()
 def search(
     query: str = typer.Argument(..., help="搜尋字詞 (口語/關鍵字皆可)"),
-    n: int = typer.Option(5, "--n", "-n", help="結果筆數 (1-10)"),
+    n: int = typer.Option(5, "--n", "-n", help="結果筆數 (1-10)", min=1, max=10),
     search_type: str = typer.Option("hybrid", "--type", help="hybrid | keyword | phrase"),
     read: bool = typer.Option(False, "--read", help="同時抓取判決理由全文片段 (excerpt)"),
 ) -> None:
@@ -138,7 +138,7 @@ def _print_report(rep: VerifyReport) -> None:
 @app.command()
 def pack(
     question: str = typer.Argument(..., help="你的法律問題 (白話即可)"),
-    n: int = typer.Option(5, "--n", "-n", help="檢索判決筆數 (1-10)"),
+    n: int = typer.Option(5, "--n", "-n", help="檢索判決筆數 (1-10)", min=1, max=10),
     out: Optional[Path] = typer.Option(
         None, "--out", "-o", help="輸出 bundle JSON 路徑 (預設印到 stdout)"
     ),
@@ -189,9 +189,20 @@ def check(
     except Exception as e:
         err.print(f"[bold red]讀取 bundle 失敗:[/] {e}")
         raise typer.Exit(1)
-    answer = answer_path.read_text(encoding="utf-8")
+    _SUPPORTED_SCHEMA = "twlegalrag.bundle/v1"
+    schema = data.get("schema") if isinstance(data, dict) else None
+    if schema != _SUPPORTED_SCHEMA:
+        err.print(
+            f"[bold red]bundle 格式錯誤:[/] schema={schema!r}，"
+            f"預期 {_SUPPORTED_SCHEMA!r}。請用 'twlegalrag pack' 重新產生 bundle。"
+        )
+        raise typer.Exit(1)
+    try:
+        answer = answer_path.read_text(encoding="utf-8")
+    except Exception as e:
+        err.print(f"[bold red]讀取答案失敗:[/] {e}")
+        raise typer.Exit(1)
     # Rebuild Judgment objects from the bundle so the checker has doc_id + fulltext.
-    from .retrieval import Judgment
     hits = [
         Judgment(
             rank=i + 1,
