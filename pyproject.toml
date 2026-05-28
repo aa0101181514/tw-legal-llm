@@ -45,3 +45,6 @@ Issues = "https://github.com/aa0101181514/tw-legal-rag/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["twlegalrag"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
